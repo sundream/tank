@@ -1,0 +1,140 @@
+1.  转向时，我们采取原地转动，因此在按方向键时需要考虑方向是否改变的问题如果方向变了，那么我们不向已改变的方向移动，
+	仅当方向不变时才移动，这样可以避免转向带来的些许偏差(偏差刚好等于步长)，如下（示例一个方向）：
+	public void moveUp(){
+		if(direct == Direction.DIR_UP)
+			setY(getY()-getSpeed());
+		setDirect(Direction.DIR_UP);s
+	}
+	
+2.  在画坦克齿轮时，我开始打算用画直线代替，但是由于图形学作图原因（画矩形时可能采取上闭下开，左闭右开的原则），
+	导致画线时或超出矩形些许范围，因此我采用画矩形代替，让其高度均为2，效果还比较好。如下：
+				case DIR_UP:
+			g.fill3DRect(x-width/2, y-height/2, width/4, height, false);	//左齿轮
+//			g.drawLine(x-width/2, y-height/3, x-width/4, y-height/3);
+//			g.drawLine(x-width/2, y, x-width/4, y);
+//			g.drawLine(x-width/2, y+height/3, x-width/4, y+height/3);
+			g.fill3DRect(x-width/2, y-height/3, width/4, 2, true);
+			g.fill3DRect(x-width/2, y-height/6, width/4, 2, true);
+			g.fill3DRect(x-width/2, y, width/4, 2, true);
+			g.fill3DRect(x-width/2, y+height/6, width/4, 2,true);
+			g.fill3DRect(x-width/2, y+height/3, width/4, 2,true);
+			
+			g.fill3DRect(x+width/4,y-height/2,width/4,height,false);		//右齿轮
+//			g.drawLine(x+width/2, y-height/3, x+width/4, y-height/3);
+//			g.drawLine(x+width/2, y, x+width/4, y);
+//			g.drawLine(x+width/2, y+height/3, x+width/4, y+height/3);
+			g.fill3DRect(x+width/4, y-height/3, width/4, 2, true);
+			g.fill3DRect(x+width/4, y-height/6, width/4, 2, true);
+			g.fill3DRect(x+width/4, y, width/4, 2, true);
+			g.fill3DRect(x+width/4, y+height/6, width/4, 2, true);
+			g.fill3DRect(x+width/4, y+height/3, width/4, 2,true);
+			
+			g.fill3DRect(x-width/4, y-height/3, width/2, 2*height/3, false);	//座舱
+			g.fillOval(x-width/4, y-height/6, width/2, height/3);			//圆形入口
+			g.fill3DRect(x-width/20, y-height/2, width/10, height/2, false); //炮管								//炮管
+			break;
+			
+3.  坦克发送子弹采取策略：仅当坦克前一颗子弹消亡时才允许发送子弹
+
+4.  //乘以SystemInfo.mul是为了保证坦克每次行走距离尽量为SystemInfo.unitLength的整数倍
+	//因为坦克遇到障碍物后不会移动。但是如果我们强行让他在这个方向，如：
+			for(int i = 0; i < cnt; ++i){
+				if(!isTouchBorderAtGo() && !this.isTouchBarrierAtGo() && !this.isTouchOtherTankAtGo()){
+						this.moveUp();
+				}
+			}
+			//改成：
+			for(int i = 0; i < cnt;){
+				if(!isTouchBorderAtGo() && !this.isTouchBarrierAtGo() && !this.isTouchOtherTankAtGo()){
+						this.moveUp();
+						++i;
+				}
+			}
+			//则坦克卡到后就会陷入死循环，导致其不动，因此我们让敌军坦克向英雄坦克一样进行调整
+			
+	
+5.  展厅原始实现代码(不能完全暂停)	//即使有办法让其完全暂停，但是很消耗资源，因为程序仍然在跑
+			if(SystemInfo.stop){				//暂停
+				if(hero1 != null)
+					hero1.setStepLength(0);
+				if(!SystemInfo.oneMan && hero2 != null)
+					hero2.setStepLength(0);
+				for(int i = enemyTanks.size()-1; i >= 0; --i){
+					enemyTanks.get(i).setStepLength(0);
+				}
+				for(int i = bullets.size()-1; i >= 0; --i){
+					bullets.get(i).setStepLength(0);
+				}
+			}
+			else{					//继续
+				if(hero1 != null)
+					hero1.setStepLength(SystemInfo.tankStepLength);
+				if(!SystemInfo.oneMan && hero2 != null)
+					hero2.setStepLength(SystemInfo.tankStepLength);
+				for(int i = enemyTanks.size()-1; i >= 0; --i){
+					enemyTanks.get(i).setStepLength(SystemInfo.tankStepLength);
+				}
+				for(int i = bullets.size()-1; i >= 0; --i){
+					bullets.get(i).setStepLength(SystemInfo.bulletStepLength);
+				}
+			}
+	//改用wait和notifyAll,加上共享锁和一个暂停标志变量实现程序暂停
+	
+6. 	不知道如何设置JFrame和JLabel的背景色。根据类的方法以为这样就行了
+
+	JFrame frame = new JFrame();
+	frame.setBackground(Color.Red);
+	JLabel l = new JLabel();
+	l.setBackground(Color.Yellow);
+	frame.add(l);
+	结果根本就没有反应。哎，怎么设置一个背景颜色居然还这么难。
+	上网google了才知道，由于Swing跟AWT有千丝万缕的联系，
+	它既要支持AWT又要有自己新的体系，所以呢，这个如果对于AWT
+	中的Frame是可以直接通过setBackground来设置背景色，
+	但是对于JFrame则不可以，应该采用下面的方法：
+	JFrame frame = new JFrame();
+	frame.getContentPane().setBackground(Color.Red);
+	而对于JLabel来说则要设置JLabel为不透明的才行，即
+	JLabel comp = new JLabel(value);
+	comp.setBackground(color);
+	comp.setOpaque(true);
+	
+7.  在用类对象时，对其加非空判断总是一种好习惯
+
+8.  Color.cyan == this.color 与this.color.equals(Color.cyan)是不同的，前者比较两个引用值是否相等(类似于两个)
+	指针地址是否相等，后者比较的是两个引用所指对象的内容是否相等，差别与两个String的引用比较和用equals比较一样
+
+9. 程序实现过程中有以下逻辑代码：
+			//这段代码有误，当双人游戏时某一方无人时，这是敌军永远得不到转向了
+//			if(hero1 != null && hero1.getWealth()[3] <= 0 &&
+//				(!SystemInfo.oneMan && hero2 != null && hero2.getWealth()[3] <= 0))
+//			{
+//				this.setDirect(SystemInfo.randomDirect());
+//			}
+			//正确逻辑如下
+			if(hero1 == null){
+				if(!SystemInfo.oneMan && hero2 != null && hero2.getWealth()[3] <= 0)
+					this.setDirect(SystemInfo.randomDirect());
+			}
+			else if(hero2 == null){
+				if(hero1 != null && hero1.getWealth()[3] <= 0)
+					this.setDirect(SystemInfo.randomDirect());
+			}
+			else if(hero1 != null && hero2 != null)
+			{
+				if(hero1.getWealth()[3] <= 0 && (!SystemInfo.oneMan && hero2.getWealth()[3] <= 0))
+				{
+					this.setDirect(SystemInfo.randomDirect());
+				}
+			}
+
+10.	 还是要谈细节，我在GamePanel的run函数中少写了
+		try {
+				Thread.sleep(50);
+			} catch (InterruptedException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+	就让本程序cpu使用率从5%升到50%
+	
+11.  对于打包后的程序，我们最好不要往包中写数据，对于涉及到写数据的文件，应该让其独立于包文件
